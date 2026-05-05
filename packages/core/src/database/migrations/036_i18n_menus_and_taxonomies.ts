@@ -422,8 +422,12 @@ async function rebuildTaxonomiesDown(db: Kysely<unknown>): Promise<void> {
 		.addColumn("parent_id", "text")
 		.addColumn("data", "text")
 		.addUniqueConstraint("taxonomies_name_slug_unique", ["name", "slug"])
-		.addForeignKeyConstraint("taxonomies_parent_fk", ["parent_id"], "taxonomies_old", ["id"], (cb) =>
-			cb.onDelete("set null"),
+		.addForeignKeyConstraint(
+			"taxonomies_parent_fk",
+			["parent_id"],
+			"taxonomies_old",
+			["id"],
+			(cb) => cb.onDelete("set null"),
 		)
 		.execute();
 	await sql`

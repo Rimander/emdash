@@ -29,8 +29,8 @@ import {
 	createMenuTranslation,
 	type MenuItem,
 } from "../lib/api";
-import { ArrowPrev } from "./ArrowIcons.js";
 import { fetchManifest } from "../lib/api/client.js";
+import { ArrowPrev } from "./ArrowIcons.js";
 import { ContentPickerModal } from "./ContentPickerModal";
 import { DialogError, getMutationError } from "./DialogError.js";
 import { useI18nConfig } from "./LocaleSwitcher.js";

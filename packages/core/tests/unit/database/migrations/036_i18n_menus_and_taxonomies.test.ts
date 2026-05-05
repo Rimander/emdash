@@ -3,10 +3,7 @@ import { sql } from "kysely";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createDatabase } from "../../../../src/database/connection.js";
-import {
-	down,
-	up,
-} from "../../../../src/database/migrations/036_i18n_menus_and_taxonomies.js";
+import { down, up } from "../../../../src/database/migrations/036_i18n_menus_and_taxonomies.js";
 import type { Database } from "../../../../src/database/types.js";
 
 /**
