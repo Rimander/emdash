@@ -87,33 +87,42 @@ export interface SeedField {
 }
 
 /**
- * Taxonomy definition in seed
+ * Taxonomy definition in seed. For multi-locale exports each locale variant
+ * is its own entry, linked via `translationOf` (referencing another entry's `id`).
  */
 export interface SeedTaxonomy {
+	/** Optional seed-local id, e.g. "tax:category:en". Target of `translationOf`. */
+	id?: string;
 	name: string;
 	label: string;
 	labelSingular?: string;
 	hierarchical: boolean;
 	collections: string[];
+	locale?: string;
+	translationOf?: string;
 	terms?: SeedTaxonomyTerm[];
 }
 
-/**
- * Taxonomy term in seed
- */
+/** Taxonomy term in seed. */
 export interface SeedTaxonomyTerm {
+	/** Optional seed-local id, e.g. "term:category:news:en". */
+	id?: string;
 	slug: string;
 	label: string;
 	description?: string;
 	parent?: string; // Slug of parent term (for hierarchical taxonomies)
+	locale?: string;
+	translationOf?: string;
 }
 
-/**
- * Menu definition in seed
- */
+/** Menu definition in seed. */
 export interface SeedMenu {
+	/** Optional seed-local id, e.g. "menu:primary:en". */
+	id?: string;
 	name: string;
 	label: string;
+	locale?: string;
+	translationOf?: string;
 	items: SeedMenuItem[];
 }
 

@@ -1054,4 +1054,130 @@ describe("applySeed", () => {
 			expect(result2.redirects.skipped).toBe(1);
 		});
 	});
+
+	describe("i18n round-trip", () => {
+		it("imports menu translations sharing one translation_group", async () => {
+			const seed: SeedFile = {
+				version: "1",
+				menus: [
+					{
+						id: "menu:primary:en",
+						name: "primary",
+						label: "Primary",
+						locale: "en",
+						items: [{ type: "custom", label: "Home", url: "/" }],
+					},
+					{
+						id: "menu:primary:es",
+						name: "primary",
+						label: "Principal",
+						locale: "es",
+						translationOf: "menu:primary:en",
+						items: [{ type: "custom", label: "Inicio", url: "/" }],
+					},
+				],
+			};
+
+			await applySeed(db, seed);
+
+			const rows = await db
+				.selectFrom("_emdash_menus")
+				.selectAll()
+				.where("name", "=", "primary")
+				.orderBy("locale", "asc")
+				.execute();
+
+			expect(rows).toHaveLength(2);
+			expect(rows[0]?.locale).toBe("en");
+			expect(rows[1]?.locale).toBe("es");
+			expect(rows[0]?.translation_group).toBe(rows[1]?.translation_group);
+			expect(rows[0]?.translation_group).toBe(rows[0]?.id);
+		});
+
+		it("imports taxonomy def translations sharing one translation_group", async () => {
+			const seed: SeedFile = {
+				version: "1",
+				taxonomies: [
+					{
+						id: "tax:topics:en",
+						name: "topics",
+						label: "Topics",
+						hierarchical: false,
+						collections: ["posts"],
+						locale: "en",
+					},
+					{
+						id: "tax:topics:es",
+						name: "topics",
+						label: "Temas",
+						hierarchical: false,
+						collections: ["posts"],
+						locale: "es",
+						translationOf: "tax:topics:en",
+					},
+				],
+			};
+
+			await applySeed(db, seed);
+
+			const rows = await db
+				.selectFrom("_emdash_taxonomy_defs")
+				.selectAll()
+				.where("name", "=", "topics")
+				.orderBy("locale", "asc")
+				.execute();
+
+			expect(rows).toHaveLength(2);
+			expect(rows[0]?.translation_group).toBe(rows[1]?.translation_group);
+		});
+
+		it("imports term translations sharing one translation_group", async () => {
+			const seed: SeedFile = {
+				version: "1",
+				taxonomies: [
+					{
+						id: "tax:topics:en",
+						name: "topics",
+						label: "Topics",
+						hierarchical: false,
+						collections: ["posts"],
+						locale: "en",
+						terms: [{ id: "term:topics:tech:en", slug: "tech", label: "Tech", locale: "en" }],
+					},
+					{
+						id: "tax:topics:es",
+						name: "topics",
+						label: "Temas",
+						hierarchical: false,
+						collections: ["posts"],
+						locale: "es",
+						translationOf: "tax:topics:en",
+						terms: [
+							{
+								id: "term:topics:tech:es",
+								slug: "tecnologia",
+								label: "Tecnología",
+								locale: "es",
+								translationOf: "term:topics:tech:en",
+							},
+						],
+					},
+				],
+			};
+
+			await applySeed(db, seed);
+
+			const terms = await db
+				.selectFrom("taxonomies")
+				.selectAll()
+				.where("name", "=", "topics")
+				.orderBy("locale", "asc")
+				.execute();
+
+			expect(terms).toHaveLength(2);
+			expect(terms[0]?.slug).toBe("tech");
+			expect(terms[1]?.slug).toBe("tecnologia");
+			expect(terms[0]?.translation_group).toBe(terms[1]?.translation_group);
+		});
+	});
 });
