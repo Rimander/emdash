@@ -136,23 +136,24 @@ export async function handleMenuCreate(
 			translationGroup = src.translation_group ?? src.id;
 		}
 
-		// Duplicate guard: same (name, locale).
-		if (input.locale !== undefined) {
-			const existing = await db
-				.selectFrom("_emdash_menus")
-				.select("id")
-				.where("name", "=", input.name)
-				.where("locale", "=", input.locale)
-				.executeTakeFirst();
-			if (existing) {
-				return {
-					success: false,
-					error: {
-						code: "CONFLICT",
-						message: `Menu "${input.name}" already exists in locale "${input.locale}"`,
-					},
-				};
-			}
+		// Duplicate guard: same (name, locale). Default 'en' matches the column DEFAULT.
+		const effectiveLocale = input.locale ?? "en";
+		const existing = await db
+			.selectFrom("_emdash_menus")
+			.select("id")
+			.where("name", "=", input.name)
+			.where("locale", "=", effectiveLocale)
+			.executeTakeFirst();
+		if (existing) {
+			return {
+				success: false,
+				error: {
+					code: "CONFLICT",
+					message: `Menu "${input.name}" already exists${
+						input.locale ? ` in locale "${input.locale}"` : ""
+					}`,
+				},
+			};
 		}
 
 		const id = ulid();
@@ -243,7 +244,7 @@ export async function handleMenuGet(
 		if (!menu) {
 			return {
 				success: false,
-				error: { code: "NOT_FOUND", message: "Menu not found" },
+				error: { code: "NOT_FOUND", message: `Menu '${name}' not found` },
 			};
 		}
 
