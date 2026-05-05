@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDatabase } from "../../../../src/database/connection.js";
 import { down, up } from "../../../../src/database/migrations/036_i18n_menus_and_taxonomies.js";
 import type { Database } from "../../../../src/database/types.js";
+import { setI18nConfig } from "../../../../src/i18n/config.js";
 
 /**
  * Seed the four pre-i18n tables that migration 036 widens, plus the support
@@ -357,6 +358,69 @@ describe("036_i18n_menus_and_taxonomies migration", () => {
 			`.execute(db);
 
 			await expect(down(db)).rejects.toThrow(/taxonomies/);
+		});
+	});
+
+	describe("with non-default locale (defaultLocale='es')", () => {
+		beforeEach(() => {
+			setI18nConfig({ defaultLocale: "es", locales: ["es", "en"] });
+		});
+
+		afterEach(() => {
+			setI18nConfig(null);
+		});
+
+		it("backfills pre-existing rows with the configured defaultLocale", async () => {
+			await sql`INSERT INTO _emdash_menus (id, name, label) VALUES ('m1', 'main', 'Principal')`.execute(
+				db,
+			);
+			await sql`INSERT INTO _emdash_menu_items (id, menu_id, type, label) VALUES ('mi1', 'm1', 'custom', 'Inicio')`.execute(
+				db,
+			);
+			await sql`INSERT INTO taxonomies (id, name, slug, label) VALUES ('t1', 'category', 'noticias', 'Noticias')`.execute(
+				db,
+			);
+			await sql`INSERT INTO _emdash_taxonomy_defs (id, name, label) VALUES ('d1', 'category', 'Categorías')`.execute(
+				db,
+			);
+
+			await up(db);
+
+			for (const table of [
+				"_emdash_menus",
+				"_emdash_menu_items",
+				"taxonomies",
+				"_emdash_taxonomy_defs",
+			]) {
+				const row = await sql<{ locale: string }>`
+					SELECT locale FROM ${sql.ref(table)} LIMIT 1
+				`.execute(db);
+				expect(row.rows[0]?.locale, `${table} should backfill with 'es'`).toBe("es");
+			}
+		});
+
+		it("rolls back cleanly when only defaultLocale rows exist", async () => {
+			await sql`INSERT INTO _emdash_menus (id, name, label) VALUES ('m1', 'main', 'Principal')`.execute(
+				db,
+			);
+			await up(db);
+
+			await expect(down(db)).resolves.not.toThrow();
+
+			const cols = (await db.introspection.getTables())
+				.find((t) => t.name === "_emdash_menus")
+				?.columns.map((c) => c.name);
+			expect(cols).not.toContain("locale");
+		});
+
+		it("blocks rollback when rows use a locale other than the configured default", async () => {
+			await up(db);
+			await sql`
+				INSERT INTO _emdash_menus (id, name, label, locale, translation_group)
+				VALUES ('m-en', 'main', 'Main', 'en', 'm-en')
+			`.execute(db);
+
+			await expect(down(db)).rejects.toThrow(/defaultLocale="es"/);
 		});
 	});
 });

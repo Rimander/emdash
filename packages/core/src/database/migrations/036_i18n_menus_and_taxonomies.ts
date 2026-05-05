@@ -3,23 +3,30 @@ import { sql } from "kysely";
 
 import { currentTimestamp, isSqlite } from "../dialect-helpers.js";
 import { validateIdentifier } from "../validate.js";
+import { getI18nConfig } from "../../i18n/config.js";
 
 /**
- * i18n for menus + taxonomies. Mirrors migration 019 (content tables):
- * adds `locale` + `translation_group` to system tables, and stores
- * translation_groups (not row ids) in `_emdash_menu_items.reference_id` and
- * `content_taxonomies.taxonomy_id`.
+ * i18n for menus + taxonomies. Adds `locale` + `translation_group` to system
+ * tables and stores translation_groups (not row ids) in
+ * `_emdash_menu_items.reference_id` and `content_taxonomies.taxonomy_id`.
+ * Backfill locale and column DEFAULTs use the site's configured defaultLocale.
  */
 
+function getDefaultLocale(): string {
+	return getI18nConfig()?.defaultLocale ?? "en";
+}
+
 export async function up(db: Kysely<unknown>): Promise<void> {
+	const defaultLocale = getDefaultLocale();
+
 	if (isSqlite(db)) {
 		// FKs off: rebuilding `taxonomies` would CASCADE-wipe `content_taxonomies`.
 		await sql.raw(`PRAGMA foreign_keys = OFF`).execute(db);
 		try {
-			await rebuildMenus(db);
-			await addItemColumns(db);
-			await rebuildTaxonomies(db);
-			await rebuildTaxonomyDefs(db);
+			await rebuildMenus(db, defaultLocale);
+			await addItemColumns(db, defaultLocale);
+			await rebuildTaxonomies(db, defaultLocale);
+			await rebuildTaxonomyDefs(db, defaultLocale);
 			await rebuildContentTaxonomies(db);
 			await remapMenuItemRefs(db);
 		} finally {
@@ -28,15 +35,15 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 		return;
 	}
 
-	await pgWiden(db, "_emdash_menus", ["name"], ["name", "locale"]);
-	await pgWiden(db, "_emdash_menu_items", null, null);
-	await pgWiden(db, "taxonomies", ["name", "slug"], ["name", "slug", "locale"]);
-	await pgWiden(db, "_emdash_taxonomy_defs", ["name"], ["name", "locale"]);
+	await pgWiden(db, "_emdash_menus", ["name"], ["name", "locale"], defaultLocale);
+	await pgWiden(db, "_emdash_menu_items", null, null, defaultLocale);
+	await pgWiden(db, "taxonomies", ["name", "slug"], ["name", "slug", "locale"], defaultLocale);
+	await pgWiden(db, "_emdash_taxonomy_defs", ["name"], ["name", "locale"], defaultLocale);
 	await pgRemapContentTaxonomies(db);
 	await remapMenuItemRefs(db);
 }
 
-async function rebuildMenus(db: Kysely<unknown>): Promise<void> {
+async function rebuildMenus(db: Kysely<unknown>, defaultLocale: string): Promise<void> {
 	if (await hasColumn(db, "_emdash_menus", "locale")) return;
 	await sql.raw(`DROP TABLE IF EXISTS "_emdash_menus_new"`).execute(db);
 
@@ -47,14 +54,14 @@ async function rebuildMenus(db: Kysely<unknown>): Promise<void> {
 		.addColumn("label", "text", (c) => c.notNull())
 		.addColumn("created_at", "text", (c) => c.defaultTo(currentTimestamp(db)))
 		.addColumn("updated_at", "text", (c) => c.defaultTo(currentTimestamp(db)))
-		.addColumn("locale", "text", (c) => c.notNull().defaultTo("en"))
+		.addColumn("locale", "text", (c) => c.notNull().defaultTo(defaultLocale))
 		.addColumn("translation_group", "text")
 		.addUniqueConstraint("_emdash_menus_name_locale_unique", ["name", "locale"])
 		.execute();
 
 	await sql`
 		INSERT INTO _emdash_menus_new (id, name, label, created_at, updated_at, locale, translation_group)
-		SELECT id, name, label, created_at, updated_at, 'en', id FROM _emdash_menus
+		SELECT id, name, label, created_at, updated_at, ${defaultLocale}, id FROM _emdash_menus
 	`.execute(db);
 
 	await db.schema.dropTable("_emdash_menus").execute();
@@ -72,12 +79,12 @@ async function rebuildMenus(db: Kysely<unknown>): Promise<void> {
 		.execute();
 }
 
-async function addItemColumns(db: Kysely<unknown>): Promise<void> {
+async function addItemColumns(db: Kysely<unknown>, defaultLocale: string): Promise<void> {
 	if (await hasColumn(db, "_emdash_menu_items", "locale")) return;
 
 	await db.schema
 		.alterTable("_emdash_menu_items")
-		.addColumn("locale", "text", (c) => c.notNull().defaultTo("en"))
+		.addColumn("locale", "text", (c) => c.notNull().defaultTo(defaultLocale))
 		.execute();
 	await db.schema.alterTable("_emdash_menu_items").addColumn("translation_group", "text").execute();
 
@@ -95,7 +102,7 @@ async function addItemColumns(db: Kysely<unknown>): Promise<void> {
 		.execute();
 }
 
-async function rebuildTaxonomies(db: Kysely<unknown>): Promise<void> {
+async function rebuildTaxonomies(db: Kysely<unknown>, defaultLocale: string): Promise<void> {
 	if (await hasColumn(db, "taxonomies", "locale")) return;
 	await sql.raw(`DROP TABLE IF EXISTS "taxonomies_new"`).execute(db);
 	await sql`DROP INDEX IF EXISTS idx_taxonomies_name`.execute(db);
@@ -108,7 +115,7 @@ async function rebuildTaxonomies(db: Kysely<unknown>): Promise<void> {
 		.addColumn("label", "text", (c) => c.notNull())
 		.addColumn("parent_id", "text")
 		.addColumn("data", "text")
-		.addColumn("locale", "text", (c) => c.notNull().defaultTo("en"))
+		.addColumn("locale", "text", (c) => c.notNull().defaultTo(defaultLocale))
 		.addColumn("translation_group", "text")
 		.addUniqueConstraint("taxonomies_name_slug_locale_unique", ["name", "slug", "locale"])
 		.addForeignKeyConstraint("taxonomies_parent_fk", ["parent_id"], "taxonomies", ["id"], (cb) =>
@@ -118,7 +125,7 @@ async function rebuildTaxonomies(db: Kysely<unknown>): Promise<void> {
 
 	await sql`
 		INSERT INTO taxonomies_new (id, name, slug, label, parent_id, data, locale, translation_group)
-		SELECT id, name, slug, label, parent_id, data, 'en', id FROM taxonomies
+		SELECT id, name, slug, label, parent_id, data, ${defaultLocale}, id FROM taxonomies
 	`.execute(db);
 
 	await db.schema.dropTable("taxonomies").execute();
@@ -133,7 +140,7 @@ async function rebuildTaxonomies(db: Kysely<unknown>): Promise<void> {
 		.execute();
 }
 
-async function rebuildTaxonomyDefs(db: Kysely<unknown>): Promise<void> {
+async function rebuildTaxonomyDefs(db: Kysely<unknown>, defaultLocale: string): Promise<void> {
 	if (await hasColumn(db, "_emdash_taxonomy_defs", "locale")) return;
 	await sql.raw(`DROP TABLE IF EXISTS "_emdash_taxonomy_defs_new"`).execute(db);
 
@@ -146,7 +153,7 @@ async function rebuildTaxonomyDefs(db: Kysely<unknown>): Promise<void> {
 		.addColumn("hierarchical", "integer", (c) => c.defaultTo(0))
 		.addColumn("collections", "text")
 		.addColumn("created_at", "text", (c) => c.defaultTo(currentTimestamp(db)))
-		.addColumn("locale", "text", (c) => c.notNull().defaultTo("en"))
+		.addColumn("locale", "text", (c) => c.notNull().defaultTo(defaultLocale))
 		.addColumn("translation_group", "text")
 		.addUniqueConstraint("_emdash_taxonomy_defs_name_locale_unique", ["name", "locale"])
 		.execute();
@@ -154,7 +161,7 @@ async function rebuildTaxonomyDefs(db: Kysely<unknown>): Promise<void> {
 	await sql`
 		INSERT INTO _emdash_taxonomy_defs_new
 			(id, name, label, label_singular, hierarchical, collections, created_at, locale, translation_group)
-		SELECT id, name, label, label_singular, hierarchical, collections, created_at, 'en', id
+		SELECT id, name, label, label_singular, hierarchical, collections, created_at, ${defaultLocale}, id
 		FROM _emdash_taxonomy_defs
 	`.execute(db);
 
@@ -228,10 +235,11 @@ async function pgWiden(
 	table: string,
 	oldCols: string[] | null,
 	newCols: string[] | null,
+	defaultLocale: string,
 ): Promise<void> {
 	validateSystemIdent(table);
 	const ref = sql.ref(table);
-	await sql`ALTER TABLE ${ref} ADD COLUMN IF NOT EXISTS locale TEXT NOT NULL DEFAULT 'en'`.execute(
+	await sql`ALTER TABLE ${ref} ADD COLUMN IF NOT EXISTS locale TEXT NOT NULL DEFAULT ${sql.lit(defaultLocale)}`.execute(
 		db,
 	);
 	await sql`ALTER TABLE ${ref} ADD COLUMN IF NOT EXISTS translation_group TEXT`.execute(db);
@@ -295,20 +303,21 @@ function validateSystemIdent(name: string): void {
 /**
  * down() is destructive on multi-locale installs (dropping `locale` collapses
  * translated rows onto an ambiguous unique key). Refuse to run when any row
- * is at a non-default locale; single-locale installs revert cleanly.
+ * sits at a locale other than the configured defaultLocale.
  */
-async function assertSingleLocale(db: Kysely<unknown>): Promise<void> {
+async function assertSingleLocale(db: Kysely<unknown>, defaultLocale: string): Promise<void> {
 	const tables = ["_emdash_menus", "_emdash_menu_items", "taxonomies", "_emdash_taxonomy_defs"];
 	for (const table of tables) {
 		validateSystemIdent(table);
 		const result = await sql<{ count: number | string }>`
-			SELECT COUNT(*) AS count FROM ${sql.ref(table)} WHERE locale != 'en'
+			SELECT COUNT(*) AS count FROM ${sql.ref(table)} WHERE locale != ${defaultLocale}
 		`.execute(db);
 		const count = Number(result.rows[0]?.count ?? 0);
 		if (count > 0) {
 			throw new Error(
 				`Cannot revert migration 036_i18n_menus_and_taxonomies: ` +
-					`${count} row(s) in "${table}" use a non-default locale. ` +
+					`${count} row(s) in "${table}" use a non-default locale ` +
+					`(defaultLocale="${defaultLocale}"). ` +
 					`Reverting would drop them silently. Export translations first ` +
 					`(or delete them) and re-run the rollback. ` +
 					`See packages/core/src/database/migrations/036_i18n_menus_and_taxonomies.ts.`,
@@ -318,7 +327,8 @@ async function assertSingleLocale(db: Kysely<unknown>): Promise<void> {
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
-	await assertSingleLocale(db);
+	const defaultLocale = getDefaultLocale();
+	await assertSingleLocale(db, defaultLocale);
 
 	const widenedTables = [
 		"_emdash_menus",
@@ -337,7 +347,7 @@ export async function down(db: Kysely<unknown>): Promise<void> {
 				await sql.raw(`DROP INDEX IF EXISTS idx_${t}_translation_group`).execute(db);
 			}
 
-			await rebuildContentTaxonomiesDown(db);
+			await rebuildContentTaxonomiesDown(db, defaultLocale);
 			await rebuildMenusDown(db);
 			await rebuildMenuItemsDown(db);
 			await rebuildTaxonomiesDown(db);
@@ -356,7 +366,10 @@ export async function down(db: Kysely<unknown>): Promise<void> {
 	}
 }
 
-async function rebuildContentTaxonomiesDown(db: Kysely<unknown>): Promise<void> {
+async function rebuildContentTaxonomiesDown(
+	db: Kysely<unknown>,
+	defaultLocale: string,
+): Promise<void> {
 	await sql.raw(`DROP TABLE IF EXISTS "content_taxonomies_new"`).execute(db);
 	await db.schema
 		.createTable("content_taxonomies_new")
@@ -377,7 +390,7 @@ async function rebuildContentTaxonomiesDown(db: Kysely<unknown>): Promise<void> 
 	await sql`
 		INSERT OR IGNORE INTO content_taxonomies_new (collection, entry_id, taxonomy_id)
 		SELECT ct.collection, ct.entry_id, COALESCE(
-			(SELECT t.id FROM taxonomies t WHERE t.translation_group = ct.taxonomy_id AND t.locale = 'en'),
+			(SELECT t.id FROM taxonomies t WHERE t.translation_group = ct.taxonomy_id AND t.locale = ${defaultLocale}),
 			ct.taxonomy_id
 		)
 		FROM content_taxonomies ct
