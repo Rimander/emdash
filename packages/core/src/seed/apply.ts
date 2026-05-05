@@ -918,7 +918,13 @@ async function applyContentTaxonomies(
 }
 
 /**
- * Apply menu items recursively
+ * Apply menu items recursively.
+ *
+ * Each item gets a fresh `translation_group` (= its own id). The seed format's
+ * `SeedMenuItem` has no `id`/`translationOf` fields, so we can't express the
+ * cross-locale "same nav entry" link here — items diverge across locales on
+ * re-apply. Runtime navigation still resolves correctly because `reference_id`
+ * already holds the content's translation_group.
  */
 async function applyMenuItems(
 	db: Kysely<Database>,

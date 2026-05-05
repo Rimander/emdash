@@ -16,6 +16,7 @@ import { ulid } from "ulidx";
 
 import { withTransaction } from "../../database/transaction.js";
 import type { Database, MenuItemTable, MenuTable } from "../../database/types.js";
+import { getI18nConfig } from "../../i18n/config.js";
 import type { ApiResult } from "../types.js";
 
 // ---------------------------------------------------------------------------
@@ -136,8 +137,9 @@ export async function handleMenuCreate(
 			translationGroup = src.translation_group ?? src.id;
 		}
 
-		// Duplicate guard: same (name, locale). Default 'en' matches the column DEFAULT.
-		const effectiveLocale = input.locale ?? "en";
+		// Duplicate guard: same (name, locale). Falls back to the configured
+		// defaultLocale to match the column DEFAULT set by migration 036.
+		const effectiveLocale = input.locale ?? getI18nConfig()?.defaultLocale ?? "en";
 		const existing = await db
 			.selectFrom("_emdash_menus")
 			.select("id")
