@@ -1,13 +1,8 @@
 /**
- * Menu item by ID endpoints (path-style)
+ * Single menu item endpoint
  *
  * PUT    /_emdash/api/menus/:name/items/:id[?locale=xx]
  * DELETE /_emdash/api/menus/:name/items/:id[?locale=xx]
- *
- * The query-string form (`/items?id=...`) is kept for backwards compatibility
- * (see `../items.ts`). New integrations should prefer the path-style form,
- * matching how every other EmDash resource is addressed (content, taxonomies,
- * redirects, sections, widget areas).
  */
 
 import type { APIRoute } from "astro";

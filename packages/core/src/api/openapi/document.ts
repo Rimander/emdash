@@ -1416,46 +1416,11 @@ const menuPaths = {
 				...standardErrors(400, 404, 500),
 			},
 		},
-		put: {
-			operationId: "updateMenuItem",
-			summary: "Update a menu item",
-			tags: ["Menus"],
-			requestParams: {
-				path: z.object({ name: z.string().meta({ description: "Menu name" }) }),
-				query: z.object({ id: z.string().meta({ description: "Menu item ID" }) }),
-			},
-			requestBody: { content: { [JSON_CONTENT]: { schema: updateMenuItemBody } } },
-			responses: {
-				"200": {
-					description: "Updated menu item",
-					content: { [JSON_CONTENT]: { schema: successEnvelope(menuItemSchema) } },
-				},
-				...authErrors,
-				...standardErrors(400, 404, 500),
-			},
-		},
-		delete: {
-			operationId: "deleteMenuItem",
-			summary: "Delete a menu item",
-			tags: ["Menus"],
-			requestParams: {
-				path: z.object({ name: z.string().meta({ description: "Menu name" }) }),
-				query: z.object({ id: z.string().meta({ description: "Menu item ID" }) }),
-			},
-			responses: {
-				"200": {
-					description: "Deleted",
-					content: { [JSON_CONTENT]: { schema: successEnvelope(deleteResponseSchema) } },
-				},
-				...authErrors,
-				...standardErrors(404, 500),
-			},
-		},
 	},
 	"/_emdash/api/menus/{name}/items/{id}": {
 		put: {
-			operationId: "updateMenuItemById",
-			summary: "Update a menu item (path-style id)",
+			operationId: "updateMenuItem",
+			summary: "Update a menu item",
 			tags: ["Menus"],
 			requestParams: {
 				path: z.object({
@@ -1474,8 +1439,8 @@ const menuPaths = {
 			},
 		},
 		delete: {
-			operationId: "deleteMenuItemById",
-			summary: "Delete a menu item (path-style id)",
+			operationId: "deleteMenuItem",
+			summary: "Delete a menu item",
 			tags: ["Menus"],
 			requestParams: {
 				path: z.object({

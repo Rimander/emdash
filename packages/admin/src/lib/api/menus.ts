@@ -192,7 +192,7 @@ export async function updateMenuItem(
 	options: LocaleOptions = {},
 ): Promise<MenuItem> {
 	const response = await apiFetch(
-		withLocale(`${API_BASE}/menus/${menuName}/items?id=${itemId}`, options.locale),
+		withLocale(`${API_BASE}/menus/${menuName}/items/${itemId}`, options.locale),
 		{
 			method: "PUT",
 			headers: { "Content-Type": "application/json" },
@@ -211,7 +211,7 @@ export async function deleteMenuItem(
 	options: LocaleOptions = {},
 ): Promise<void> {
 	const response = await apiFetch(
-		withLocale(`${API_BASE}/menus/${menuName}/items?id=${itemId}`, options.locale),
+		withLocale(`${API_BASE}/menus/${menuName}/items/${itemId}`, options.locale),
 		{ method: "DELETE" },
 	);
 	if (!response.ok) await throwResponseError(response, i18n._(msg`Failed to delete menu item`));

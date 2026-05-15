@@ -68,14 +68,6 @@ export const updateMenuItemBody = z
 	.strict()
 	.meta({ id: "UpdateMenuItemBody" });
 
-export const menuItemDeleteQuery = z.object({
-	id: z.string().min(1),
-});
-
-export const menuItemUpdateQuery = z.object({
-	id: z.string().min(1),
-});
-
 export const reorderMenuItemsBody = z
 	.object({
 		items: z.array(
