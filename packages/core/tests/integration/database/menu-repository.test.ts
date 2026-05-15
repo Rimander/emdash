@@ -318,9 +318,7 @@ describe("MenuRepository", () => {
 			await db.deleteFrom("_emdash_menus").where("id", "=", menu.id).execute();
 
 			await expect(
-				repo.setItems(menu.id, "en", [
-					{ label: "Stray", type: "custom", customUrl: "/stray" },
-				]),
+				repo.setItems(menu.id, "en", [{ label: "Stray", type: "custom", customUrl: "/stray" }]),
 			).rejects.toBeInstanceOf(MenuGoneError);
 
 			// No orphan items left behind by the aborted transaction.
@@ -337,9 +335,7 @@ describe("MenuRepository", () => {
 			const before = (await repo.findById(menu.id))!.updatedAt;
 			// Force a measurable gap so timestamp resolution doesn't flake.
 			await new Promise((r) => setTimeout(r, 10));
-			await repo.setItems(menu.id, menu.locale, [
-				{ label: "X", type: "custom", customUrl: "/x" },
-			]);
+			await repo.setItems(menu.id, menu.locale, [{ label: "X", type: "custom", customUrl: "/x" }]);
 			const after = (await repo.findById(menu.id))!.updatedAt;
 			expect(after >= before).toBe(true);
 		});

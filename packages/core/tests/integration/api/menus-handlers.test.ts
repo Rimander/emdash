@@ -40,7 +40,7 @@ describe("menu schemas", () => {
 					.filter((i) => i.code === "unrecognized_keys")
 					.flatMap((i) =>
 						"keys" in i && Array.isArray((i as { keys: unknown }).keys)
-							? ((i as { keys: string[] }).keys)
+							? (i as { keys: string[] }).keys
 							: [],
 					);
 				expect(unknownKeys).toEqual(expect.arrayContaining(["custom_url", "sort_order"]));
@@ -272,9 +272,7 @@ describe("menu items path-style route", () => {
 		// REST-style DELETE /items/:id reachable; without it Astro returns the
 		// SSR 404 HTML page. We import dynamically to assert the module exists
 		// and exports the expected HTTP verbs.
-		const mod = await import(
-			"../../../src/astro/routes/api/menus/[name]/items/[id].js"
-		);
+		const mod = await import("../../../src/astro/routes/api/menus/[name]/items/[id].js");
 		expect(typeof mod.PUT).toBe("function");
 		expect(typeof mod.DELETE).toBe("function");
 		expect(mod.prerender).toBe(false);

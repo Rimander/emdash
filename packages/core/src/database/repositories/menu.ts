@@ -16,8 +16,8 @@
 import type { Kysely, Selectable } from "kysely";
 import { ulid } from "ulidx";
 
-import type { Database, MenuItemTable, MenuTable } from "../types.js";
 import { withTransaction } from "../transaction.js";
+import type { Database, MenuItemTable, MenuTable } from "../types.js";
 
 /**
  * Thrown from inside a repository transaction when the menu the caller
@@ -452,11 +452,7 @@ export class MenuRepository {
 	 * scope is used (max + 1). The fresh `translation_group` defaults to the
 	 * item's own id, matching the migration 036 backfill.
 	 */
-	async createItem(
-		menuId: string,
-		locale: string,
-		input: CreateMenuItemInput,
-	): Promise<MenuItem> {
+	async createItem(menuId: string, locale: string, input: CreateMenuItemInput): Promise<MenuItem> {
 		let sortOrder = input.sortOrder ?? 0;
 		if (input.sortOrder === undefined) {
 			const maxOrder = await this.db
