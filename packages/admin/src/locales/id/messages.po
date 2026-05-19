@@ -664,12 +664,12 @@ msgid "Additional data to import."
 msgstr "Data tambahan untuk diimpor."
 
 #: packages/admin/src/components/settings/ApiTokenSettings.tsx:95
-#: packages/admin/src/components/Sidebar.tsx:438
+#: packages/admin/src/components/Sidebar.tsx:454
 #: packages/admin/src/components/users/roleDefinitions.ts:42
 msgid "Admin"
 msgstr "Admin"
 
-#: packages/admin/src/components/Sidebar.tsx:378
+#: packages/admin/src/components/Sidebar.tsx:394
 msgid "Admin navigation"
 msgstr "Navigasi admin"
 
@@ -1090,7 +1090,7 @@ msgid "Bullet List"
 msgstr "Daftar Poin"
 
 #: packages/admin/src/components/ContentEditor.tsx:967
-#: packages/admin/src/components/Sidebar.tsx:206
+#: packages/admin/src/components/Sidebar.tsx:209
 msgid "Bylines"
 msgstr "Byline"
 
@@ -1396,7 +1396,7 @@ msgstr "Detail Komentar"
 
 #: packages/admin/src/components/comments/CommentInbox.tsx:146
 #: packages/admin/src/components/ContentTypeEditor.tsx:487
-#: packages/admin/src/components/Sidebar.tsx:190
+#: packages/admin/src/components/Sidebar.tsx:193
 msgid "Comments"
 msgstr "Komentar"
 
@@ -1448,7 +1448,7 @@ msgstr "Terhubung {0}"
 #: packages/admin/src/components/Dashboard.tsx:164
 #: packages/admin/src/components/PortableTextEditor.tsx:2005
 #: packages/admin/src/components/SectionEditor.tsx:194
-#: packages/admin/src/components/Sidebar.tsx:412
+#: packages/admin/src/components/Sidebar.tsx:428
 #: packages/admin/src/components/Widgets.tsx:819
 msgid "Content"
 msgstr "Konten"
@@ -1508,7 +1508,7 @@ msgstr "Konten untuk Diimpor"
 
 #: packages/admin/src/components/AdminCommandPalette.tsx:185
 #: packages/admin/src/components/ContentTypeList.tsx:40
-#: packages/admin/src/components/Sidebar.tsx:210
+#: packages/admin/src/components/Sidebar.tsx:213
 msgid "Content Types"
 msgstr "Tipe Konten"
 
@@ -1813,8 +1813,8 @@ msgstr "Gelap"
 #: packages/admin/src/components/AdminCommandPalette.tsx:131
 #: packages/admin/src/components/ContentTypeList.tsx:246
 #: packages/admin/src/components/Dashboard.tsx:42
-#: packages/admin/src/components/Sidebar.tsx:176
-#: packages/admin/src/components/Sidebar.tsx:401
+#: packages/admin/src/components/Sidebar.tsx:179
+#: packages/admin/src/components/Sidebar.tsx:417
 msgid "Dashboard"
 msgstr "Dasbor"
 
@@ -3308,7 +3308,7 @@ msgid "Images"
 msgstr "Gambar"
 
 #: packages/admin/src/components/AdminCommandPalette.tsx:227
-#: packages/admin/src/components/Sidebar.tsx:228
+#: packages/admin/src/components/Sidebar.tsx:244
 #: packages/admin/src/components/WordPressImport.tsx:664
 msgid "Import"
 msgstr "Impor"
@@ -3837,7 +3837,7 @@ msgstr "Membuat permintaan jaringan"
 msgid "Make network requests to any host (unrestricted)"
 msgstr "Membuat permintaan jaringan ke host mana pun (tidak terbatas)"
 
-#: packages/admin/src/components/Sidebar.tsx:426
+#: packages/admin/src/components/Sidebar.tsx:442
 msgid "Manage"
 msgstr "Kelola"
 
@@ -3891,7 +3891,7 @@ msgstr "marketplace"
 #: packages/admin/src/components/MarketplaceBrowse.tsx:87
 #: packages/admin/src/components/PluginManager.tsx:158
 #: packages/admin/src/components/PluginManager.tsx:306
-#: packages/admin/src/components/Sidebar.tsx:219
+#: packages/admin/src/components/Sidebar.tsx:228
 msgid "Marketplace"
 msgstr "Marketplace"
 
@@ -3908,7 +3908,7 @@ msgid "Max Value"
 msgstr "Nilai Maks"
 
 #: packages/admin/src/components/PortableTextEditor.tsx:1991
-#: packages/admin/src/components/Sidebar.tsx:185
+#: packages/admin/src/components/Sidebar.tsx:188
 #: packages/admin/src/components/WordPressImport.tsx:678
 #: packages/admin/src/components/WordPressImport.tsx:1173
 msgid "Media"
@@ -3998,7 +3998,7 @@ msgstr "Urutan menu telah diperbarui."
 
 #: packages/admin/src/components/AdminCommandPalette.tsx:161
 #: packages/admin/src/components/MenuList.tsx:103
-#: packages/admin/src/components/Sidebar.tsx:195
+#: packages/admin/src/components/Sidebar.tsx:198
 msgid "Menus"
 msgstr "Menu"
 
@@ -4815,8 +4815,8 @@ msgstr "Plugin diperbarui"
 #: packages/admin/src/components/PluginManager.tsx:126
 #: packages/admin/src/components/PluginManager.tsx:135
 #: packages/admin/src/components/PluginManager.tsx:144
-#: packages/admin/src/components/Sidebar.tsx:212
-#: packages/admin/src/components/Sidebar.tsx:450
+#: packages/admin/src/components/Sidebar.tsx:215
+#: packages/admin/src/components/Sidebar.tsx:466
 msgid "Plugins"
 msgstr "Plugin"
 
@@ -4990,7 +4990,7 @@ msgstr "Mengalihkan ke login..."
 
 #: packages/admin/src/components/Redirects.tsx:332
 #: packages/admin/src/components/Redirects.tsx:351
-#: packages/admin/src/components/Sidebar.tsx:196
+#: packages/admin/src/components/Sidebar.tsx:199
 msgid "Redirects"
 msgstr "Pengalihan"
 
@@ -5026,6 +5026,10 @@ msgstr "Registrasi gagal"
 #: packages/admin/src/components/auth/PasskeyRegistration.tsx:266
 msgid "Registration was cancelled or timed out. Please try again."
 msgstr "Pendaftaran dibatalkan atau waktu telah habis. Silakan coba lagi."
+
+#: packages/admin/src/components/Sidebar.tsx:221
+msgid "Registry"
+msgstr ""
 
 #: packages/admin/src/components/RegistryPluginDetail.tsx:295
 msgid "Release is too new to install"
@@ -5577,7 +5581,7 @@ msgstr "Judul bagian"
 
 #: packages/admin/src/components/AdminCommandPalette.tsx:177
 #: packages/admin/src/components/Sections.tsx:134
-#: packages/admin/src/components/Sidebar.tsx:198
+#: packages/admin/src/components/Sidebar.tsx:201
 msgid "Sections"
 msgstr "Bagian"
 
@@ -5816,7 +5820,7 @@ msgstr "Mengatur..."
 #: packages/admin/src/components/Header.tsx:93
 #: packages/admin/src/components/PluginManager.tsx:385
 #: packages/admin/src/components/Settings.tsx:62
-#: packages/admin/src/components/Sidebar.tsx:229
+#: packages/admin/src/components/Sidebar.tsx:245
 #: packages/admin/src/components/WordPressImport.tsx:1647
 msgid "Settings"
 msgstr "Pengaturan"
@@ -6250,7 +6254,7 @@ msgstr "Bagian yang disediakan tema tidak dapat dihapus. Edit bagian untuk membu
 msgid "Theme: {label}"
 msgstr "Tema: {label}"
 
-#: packages/admin/src/components/Sidebar.tsx:223
+#: packages/admin/src/components/Sidebar.tsx:237
 #: packages/admin/src/components/ThemeMarketplaceBrowse.tsx:77
 msgid "Themes"
 msgstr "Tema"
@@ -6860,7 +6864,7 @@ msgid "User not found"
 msgstr "Pengguna tidak ditemukan"
 
 #: packages/admin/src/components/AdminCommandPalette.tsx:211
-#: packages/admin/src/components/Sidebar.tsx:211
+#: packages/admin/src/components/Sidebar.tsx:214
 #: packages/admin/src/components/users/UserList.tsx:54
 msgid "Users"
 msgstr "Pengguna"
@@ -7052,7 +7056,7 @@ msgstr "Widget diperbarui"
 
 #: packages/admin/src/components/AdminCommandPalette.tsx:169
 #: packages/admin/src/components/PluginManager.tsx:330
-#: packages/admin/src/components/Sidebar.tsx:197
+#: packages/admin/src/components/Sidebar.tsx:200
 #: packages/admin/src/components/Widgets.tsx:325
 msgid "Widgets"
 msgstr "Widget"
