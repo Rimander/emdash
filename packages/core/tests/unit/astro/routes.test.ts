@@ -58,7 +58,9 @@ describe("core menu item path-style route injection", () => {
 		expect(routes).toContainEqual(
 			expect.objectContaining({
 				pattern: "/_emdash/api/menus/[name]/items/[id]",
-				entrypoint: expect.stringContaining("api/menus/[name]/items/[id].ts"),
+				// Entrypoints resolve to compiled artifacts; `[`/`]` get rewritten
+				// to `_` (routeArtifactName) — same convention as the media test.
+				entrypoint: expect.stringContaining("api/menus/_name_/items/_id_"),
 			}),
 		);
 	});
