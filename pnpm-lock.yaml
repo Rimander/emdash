@@ -207,6 +207,9 @@ catalogs:
     '@types/react-dom':
       specifier: 19.2.3
       version: 19.2.3
+    '@types/semver':
+      specifier: ^7.5.8
+      version: 7.7.1
     astro:
       specifier: ^6.3.0
       version: 6.3.5
@@ -237,6 +240,9 @@ catalogs:
     react-dom:
       specifier: 19.2.4
       version: 19.2.4
+    semver:
+      specifier: ^7.6.3
+      version: 7.7.4
     tsdown:
       specifier: 0.20.3
       version: 0.20.3
@@ -2008,6 +2014,9 @@ importers:
       '@emdash-cms/registry-lexicons':
         specifier: workspace:*
         version: link:../registry-lexicons
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: 'catalog:'
@@ -2015,6 +2024,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.13
+      '@types/semver':
+        specifier: 'catalog:'
+        version: 7.7.1
       publint:
         specifier: 'catalog:'
         version: 0.3.17
@@ -6778,6 +6790,9 @@ packages:
 
   '@types/sax@1.2.7':
     resolution: {integrity: sha512-rO73L89PJxeYM3s3pPPjiPgVVcymqU490g0YO5n5By0k2Erzj6tay/4lr1CHAAU4JyOWd1rpQ8bCf6cZfHU96A==}
+
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -16451,6 +16466,8 @@ snapshots:
   '@types/sax@1.2.7':
     dependencies:
       '@types/node': 24.10.13
+
+  '@types/semver@7.7.1': {}
 
   '@types/trusted-types@2.0.7':
     optional: true

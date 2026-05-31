@@ -14,17 +14,20 @@
  */
 
 import { Badge, Button, LinkButton, Select } from "@cloudflare/kumo";
+import { checkEnvCompatibility } from "@emdash-cms/registry-client/env";
 import { useLingui } from "@lingui/react/macro";
 import { ShieldCheck, Warning } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import * as React from "react";
 
+import { fetchManifest } from "../lib/api/client.js";
 import {
 	artifactProxyUrl,
 	canonicalCapabilitiesForDriftCheck,
 	extractMediaArtifacts,
 	getRegistryPackage,
+	hostEnvFromManifest,
 	installRegistryPlugin,
 	listRegistryReleases,
 	releasePassesPolicy,
@@ -60,6 +63,16 @@ export function RegistryPluginDetail({ pluginId, config }: RegistryPluginDetailP
 			return fetchPlugins();
 		},
 	});
+
+	// Host environment versions (`env:emdash`, `env:astro`) — used to evaluate
+	// the selected release's `requires` constraints before offering install.
+	// Derived from the admin manifest the shell already fetches under the same
+	// query key, so this view adds no extra round-trip.
+	const { data: manifest } = useQuery({
+		queryKey: ["manifest"],
+		queryFn: fetchManifest,
+	});
+	const hostEnv = React.useMemo(() => hostEnvFromManifest(manifest), [manifest]);
 
 	// Parse `<publisher>/<slug>` out of the route param. The publisher
 	// segment is either a handle (`example.dev`) or a DID
@@ -242,6 +255,20 @@ export function RegistryPluginDetail({ pluginId, config }: RegistryPluginDetailP
 
 	const policyOk =
 		release && pkg ? releasePassesPolicy(release, { did: pkg.did, slug }, config.policy) : true;
+
+	// Environment compatibility: compare the selected release's `requires`
+	// constraints against the running host. `requires` is the lexicon's open
+	// `unknown` value; `checkEnvCompatibility` guards its shape. Mirrors the
+	// server-side install gate so the admin can't offer an install the server
+	// would reject. While the manifest is still loading `hostEnv` is empty, so
+	// every constraint is skipped (fail-open until the data arrives; the server
+	// gate is the authority either way).
+	const envMismatches = React.useMemo(() => {
+		if (!release) return [];
+		return checkEnvCompatibility(release.release?.requires, hostEnv);
+	}, [release, hostEnv]);
+	const envOk = envMismatches.length === 0;
+
 	// Handle resolution affects display only -- installs are addressed
 	// by DID, so an unverified or missing handle doesn't block install.
 	// A handle that *claims* a value but doesn't verify (`status:
@@ -417,7 +444,7 @@ export function RegistryPluginDetail({ pluginId, config }: RegistryPluginDetailP
 					) : (
 						<Button
 							variant="primary"
-							disabled={!release || !policyOk || handleResult.status === "invalid"}
+							disabled={!release || !policyOk || !envOk || handleResult.status === "invalid"}
 							onClick={() => setShowConsent(true)}
 						>
 							{t`Install`}
@@ -480,6 +507,32 @@ export function RegistryPluginDetail({ pluginId, config }: RegistryPluginDetailP
 						<p className="mt-1 text-sm text-kumo-default">
 							{t`Your site requires releases to be at least ${formatHoldback(config.policy?.minimumReleaseAgeSeconds ?? 0)} old before they can be installed. This release will become installable later.`}
 						</p>
+					</div>
+				</div>
+			) : null}
+
+			{/* Environment compatibility notice. Mirrors the server install gate
+			    (ENV_INCOMPATIBLE): the selected release declares `requires`
+			    constraints the running host doesn't satisfy. Install is
+			    disabled until the host is upgraded. */}
+			{release && !envOk ? (
+				<div
+					className="flex items-start gap-3 rounded-md border border-kumo-warning bg-kumo-warning/10 p-4 text-kumo-warning"
+					role="status"
+				>
+					<Warning className="mt-0.5 h-5 w-5 shrink-0" />
+					<div>
+						<p className="font-medium">{t`Not compatible with this environment`}</p>
+						<p className="mt-1 text-sm text-kumo-default">
+							{t`This release requires a newer environment than your site currently runs. Upgrade before installing.`}
+						</p>
+						<ul className="mt-2 space-y-1 text-sm text-kumo-default">
+							{envMismatches.map((m) => (
+								<li key={m.key}>
+									{t`${envLabel(m.key)} ${m.required} required — you have ${m.host}.`}
+								</li>
+							))}
+						</ul>
 					</div>
 				</div>
 			) : null}
@@ -663,6 +716,17 @@ const PRE_RELEASE_VERSION_RE = /^\d+\.\d+\.\d+-/;
  */
 function isPreReleaseVersion(version: string): boolean {
 	return PRE_RELEASE_VERSION_RE.test(version);
+}
+
+/**
+ * Human-readable name for a `requires` env key. The known EmDash environments
+ * get their proper product names; anything else falls back to the key with the
+ * `env:` prefix stripped (product names, not localised strings).
+ */
+function envLabel(key: string): string {
+	if (key === "env:emdash") return "EmDash";
+	if (key === "env:astro") return "Astro";
+	return key.startsWith("env:") ? key.slice("env:".length) : key;
 }
 
 const YANKED_LABEL_VALUE = "security:yanked";

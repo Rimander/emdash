@@ -188,6 +188,12 @@ export interface PublishOptions {
 	 */
 	repo?: string;
 	/**
+	 * Environment constraints for this release (`release.requires` in the
+	 * lexicon). Map of `env:*`/DID keys to semver ranges. Written to the
+	 * release record when non-empty; omitted otherwise.
+	 */
+	requires?: Record<string, string>;
+	/**
 	 * Resolved media artifacts (icon / screenshot / banner) for this release.
 	 * Already uploaded and measured by the caller. Written verbatim into the
 	 * release record. Releases are immutable per version, so this is not a
@@ -291,6 +297,8 @@ interface PackageReleaseRecordShape {
 	};
 	/** Source-repository URL (`release.repo`). Omitted when not provided. */
 	repo?: string;
+	/** Environment constraints (`release.requires`). Omitted when empty. */
+	requires?: Record<string, string>;
 	/**
 	 * Open-union extension container, keyed by NSID. Releases of type
 	 * `emdash-plugin` MUST include a `releaseExtension` entry carrying the
@@ -445,6 +453,9 @@ export async function publishRelease(options: PublishOptions): Promise<PublishRe
 	};
 	if (options.repo !== undefined) {
 		releaseRecord.repo = options.repo;
+	}
+	if (options.requires !== undefined && Object.keys(options.requires).length > 0) {
+		releaseRecord.requires = options.requires;
 	}
 	applyArtifacts(releaseRecord, options.artifacts);
 

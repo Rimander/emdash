@@ -26,12 +26,21 @@ import type {
 	ValidatedReleaseView,
 	ValidatedSearchPackages,
 } from "@emdash-cms/registry-client/discovery";
+import { hostEnvFromVersions } from "@emdash-cms/registry-client/env";
+import type { HostEnv } from "@emdash-cms/registry-client/env";
 import { i18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
-import { API_BASE, apiFetch, parseApiResponse, throwResponseError } from "./client.js";
+import {
+	API_BASE,
+	apiFetch,
+	parseApiResponse,
+	throwResponseError,
+	type AdminManifest,
+} from "./client.js";
 
 export type { Did, Handle };
+export type { HostEnv };
 
 // ---------------------------------------------------------------------------
 // Types
@@ -292,6 +301,18 @@ export async function listRegistryReleases(
 ): Promise<ValidatedListReleases> {
 	const client = await getDiscoveryClient(config);
 	return client.listReleases(did, slug, opts);
+}
+
+/**
+ * Derive the host environment versions (`env:emdash`, `env:astro`) the running
+ * EmDash install advertises, so a release's `requires` constraints can be
+ * evaluated client-side before offering install. Reads the already-fetched
+ * admin manifest (`version`, `astroVersion`) rather than issuing a second
+ * request. The dev-skip / astro-omit rule is shared with the server gate via
+ * `hostEnvFromVersions`.
+ */
+export function hostEnvFromManifest(manifest: AdminManifest | undefined): HostEnv {
+	return hostEnvFromVersions(manifest?.version, manifest?.astroVersion);
 }
 
 /**

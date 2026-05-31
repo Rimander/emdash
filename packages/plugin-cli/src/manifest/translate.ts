@@ -51,6 +51,13 @@ export interface NormalisedManifest {
 	repo: string | undefined;
 
 	/**
+	 * Release-level environment constraints (`release.requires`). Map of
+	 * `env:*`/DID keys to semver ranges. Release-level, not profile-level —
+	 * passed to `publishRelease` separately, never via `manifestToProfileInput`.
+	 */
+	requires: Record<string, string> | undefined;
+
+	/**
 	 * Release media artifacts (icon / screenshot / banner). File refs only —
 	 * the publish command resolves, measures, and uploads them. `undefined`
 	 * when the manifest declared none.
@@ -178,6 +185,7 @@ export function normaliseManifest(manifest: Manifest, packageVersion?: string): 
 		description: manifest.description,
 		keywords: manifest.keywords,
 		repo: manifest.repo,
+		requires: manifest.release?.requires,
 		artifacts: manifest.release?.artifacts,
 		// Schema validation already gates capability strings to the
 		// current vocabulary via a runtime check, so by the time we get
