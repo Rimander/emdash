@@ -281,6 +281,96 @@ describe("Zod Generator", () => {
 			expect(schema.parse(validImage)).toMatchObject(validImage);
 		});
 
+		describe("multiple media fields (validation.multiple)", () => {
+			function makeImageField(validation?: Field["validation"]): Field {
+				return {
+					id: "f1",
+					collectionId: "c1",
+					slug: "gallery",
+					label: "Gallery",
+					type: "image",
+					columnType: "TEXT",
+					required: true,
+					unique: false,
+					validation,
+					sortOrder: 0,
+					createdAt: new Date().toISOString(),
+				};
+			}
+
+			it("should accept an array of image values when multiple is true", () => {
+				const schema = generateFieldSchema(makeImageField({ multiple: true }));
+				const gallery = [
+					{ id: "img1", alt: "First" },
+					{ id: "img2", alt: "Second" },
+				];
+				expect(schema.parse(gallery)).toMatchObject(gallery);
+			});
+
+			it("should reject invalid items inside a multiple image array", () => {
+				const schema = generateFieldSchema(makeImageField({ multiple: true }));
+				expect(() => schema.parse([{ id: "img1" }, { alt: "missing id" }])).toThrow();
+			});
+
+			it("should wrap a legacy single object when multiple is turned on", () => {
+				// A field upgraded from single to multiple still has `{...}` values
+				// stored from before the toggle. The admin re-sends what it loaded
+				// on autosave (#867), so the single shape must round-trip.
+				const schema = generateFieldSchema(makeImageField({ multiple: true }));
+				expect(schema.parse({ id: "img1", alt: "Old" })).toMatchObject([
+					{ id: "img1", alt: "Old" },
+				]);
+			});
+
+			it("should unwrap a one-element array when multiple is turned off", () => {
+				// The mirror of the toggle-on case: a field switched back to single
+				// may hold `[{...}]` values saved while multiple was on.
+				const schema = generateFieldSchema(makeImageField());
+				expect(schema.parse([{ id: "img1" }])).toMatchObject({ id: "img1" });
+				// Arrays with more than one item cannot be silently truncated.
+				expect(() => schema.parse([{ id: "a" }, { id: "b" }])).toThrow();
+			});
+
+			it("should apply minItems/maxItems to multiple media fields", () => {
+				const schema = generateFieldSchema(
+					makeImageField({ multiple: true, minItems: 2, maxItems: 3 }),
+				);
+				expect(() => schema.parse([{ id: "a" }])).toThrow();
+				expect(schema.parse([{ id: "a" }, { id: "b" }])).toHaveLength(2);
+				expect(() => schema.parse([{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }])).toThrow();
+			});
+
+			it("should accept an array of file values when multiple is true", () => {
+				const field: Field = {
+					id: "f1",
+					collectionId: "c1",
+					slug: "downloads",
+					label: "Downloads",
+					type: "file",
+					columnType: "TEXT",
+					required: true,
+					unique: false,
+					validation: { multiple: true },
+					sortOrder: 0,
+					createdAt: new Date().toISOString(),
+				};
+				const schema = generateFieldSchema(field);
+				const files = [
+					{ id: "file1", filename: "a.pdf" },
+					{ id: "file2", filename: "b.pdf" },
+				];
+				expect(schema.parse(files)).toMatchObject(files);
+			});
+
+			it("should keep nullish round-trips working for non-required multiple fields", () => {
+				const field = makeImageField({ multiple: true });
+				field.required = false;
+				const schema = generateFieldSchema(field);
+				expect(schema.parse(undefined)).toBe(undefined);
+				expect(schema.parse(null)).toBe(null);
+			});
+		});
+
 		it("should make field optional when required is false", () => {
 			const field: Field = {
 				id: "f1",
@@ -559,6 +649,48 @@ describe("Zod Generator", () => {
 			// Hydrated by getEmDashCollection/getEmDashEntry
 			expect(ts).toContain("bylines?: ContentBylineCredit[];");
 			expect(ts).toContain("terms?: Record<string, TaxonomyTerm[]>;");
+		});
+
+		it("should emit array types for multiple media fields", () => {
+			const collection: CollectionWithFields = {
+				id: "c1",
+				slug: "events",
+				label: "Events",
+				supports: [],
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+				fields: [
+					{
+						id: "f1",
+						collectionId: "c1",
+						slug: "gallery",
+						label: "Gallery",
+						type: "image",
+						columnType: "TEXT",
+						required: false,
+						unique: false,
+						validation: { multiple: true },
+						sortOrder: 0,
+						createdAt: new Date().toISOString(),
+					},
+					{
+						id: "f2",
+						collectionId: "c1",
+						slug: "cover",
+						label: "Cover",
+						type: "image",
+						columnType: "TEXT",
+						required: false,
+						unique: false,
+						sortOrder: 1,
+						createdAt: new Date().toISOString(),
+					},
+				],
+			};
+
+			const ts = generateTypeScript(collection);
+			expect(ts).toContain("gallery?: Array<{ id: string;");
+			expect(ts).toContain("cover?: { id: string;");
 		});
 	});
 

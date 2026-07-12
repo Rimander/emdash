@@ -139,9 +139,15 @@ export interface FieldValidation {
 	pattern?: string;
 	options?: string[]; // For select/multiSelect
 	subFields?: RepeaterSubField[]; // For repeater fields
-	minItems?: number; // For repeater fields
-	maxItems?: number; // For repeater fields
+	minItems?: number; // For repeater and multiple image/file fields
+	maxItems?: number; // For repeater and multiple image/file fields
 	allowedMimeTypes?: string[];
+	/**
+	 * For image/file fields: the value is an ordered array of media values.
+	 * Lives in `validation` (not `options`) so it feeds the generated Zod
+	 * schema and `generateSchemaHash`.
+	 */
+	multiple?: boolean;
 }
 
 /**

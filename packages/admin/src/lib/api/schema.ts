@@ -63,6 +63,7 @@ export interface SchemaField {
 		pattern?: string;
 		options?: string[];
 		allowedMimeTypes?: string[];
+		multiple?: boolean;
 	};
 	widget?: string;
 	options?: Record<string, unknown>;
@@ -115,6 +116,7 @@ export interface CreateFieldInput {
 		pattern?: string;
 		options?: string[];
 		allowedMimeTypes?: string[];
+		multiple?: boolean;
 	} | null;
 	widget?: string;
 	options?: Record<string, unknown>;
@@ -134,6 +136,7 @@ export interface UpdateFieldInput {
 		pattern?: string;
 		options?: string[];
 		allowedMimeTypes?: string[];
+		multiple?: boolean;
 	} | null;
 	widget?: string;
 	options?: Record<string, unknown>;

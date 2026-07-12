@@ -49,6 +49,7 @@ import {
 	SettingsActionBar,
 } from "./ContentSettingsPanel.js";
 import { ImageFieldRenderer, type ImageFieldValue } from "./ImageFieldRenderer.js";
+import { MultiMediaFieldRenderer, mediaItemToFileValue } from "./MultiMediaFieldRenderer.js";
 import { PluginFieldErrorBoundary } from "./PluginFieldErrorBoundary.js";
 import { RepeaterField } from "./RepeaterField.js";
 import { RouterLinkButton } from "./RouterLinkButton.js";
@@ -1264,6 +1265,30 @@ function FieldRenderer({
 			);
 
 		case "image": {
+			if (field.validation?.multiple === true) {
+				return (
+					<MultiMediaFieldRenderer
+						id={id}
+						label={label}
+						kind="image"
+						value={value}
+						onChange={handleChange}
+						required={field.required}
+						allowedMimeTypes={
+							Array.isArray(field.validation?.allowedMimeTypes)
+								? (field.validation.allowedMimeTypes as string[])
+								: undefined
+						}
+						fieldId={field.id}
+						minItems={
+							typeof field.validation?.minItems === "number" ? field.validation.minItems : undefined
+						}
+						maxItems={
+							typeof field.validation?.maxItems === "number" ? field.validation.maxItems : undefined
+						}
+					/>
+				);
+			}
 			// value is either an ImageFieldValue object, a legacy string URL, or undefined
 			const imageValue =
 				value != null && typeof value === "object" ? (value as ImageFieldValue) : undefined;
@@ -1290,6 +1315,30 @@ function FieldRenderer({
 		}
 
 		case "file": {
+			if (field.validation?.multiple === true) {
+				return (
+					<MultiMediaFieldRenderer
+						id={id}
+						label={label}
+						kind="file"
+						value={value}
+						onChange={handleChange}
+						required={field.required}
+						allowedMimeTypes={
+							Array.isArray(field.validation?.allowedMimeTypes)
+								? (field.validation.allowedMimeTypes as string[])
+								: undefined
+						}
+						fieldId={field.id}
+						minItems={
+							typeof field.validation?.minItems === "number" ? field.validation.minItems : undefined
+						}
+						maxItems={
+							typeof field.validation?.maxItems === "number" ? field.validation.maxItems : undefined
+						}
+					/>
+				);
+			}
 			// value is either a FileFieldValue object or undefined.
 			// The file field type was unusable before this PR (rendered as a text input
 			// that produced raw strings nobody could meaningfully save), so there is no
@@ -1593,16 +1642,7 @@ function FileFieldRenderer({
 	}, [value, t]);
 
 	const handleSelect = (item: MediaItem) => {
-		const isLocalProvider = !item.provider || item.provider === "local";
-		onChange({
-			id: item.id,
-			provider: item.provider || "local",
-			src: isLocalProvider ? undefined : item.url,
-			filename: item.filename,
-			mimeType: item.mimeType,
-			size: item.size,
-			meta: isLocalProvider ? { ...item.meta, storageKey: item.storageKey } : item.meta,
-		});
+		onChange(mediaItemToFileValue(item));
 	};
 
 	const handleRemove = () => {

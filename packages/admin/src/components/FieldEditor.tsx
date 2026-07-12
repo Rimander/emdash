@@ -77,6 +77,7 @@ interface FieldFormState {
 	minItems: string;
 	maxItems: string;
 	allowedMimeTypes: string[];
+	multiple: boolean;
 }
 
 function getInitialFormState(field?: SchemaField): FieldFormState {
@@ -101,6 +102,7 @@ function getInitialFormState(field?: SchemaField): FieldFormState {
 			minItems: (field.validation as Record<string, unknown>)?.minItems?.toString() ?? "",
 			maxItems: (field.validation as Record<string, unknown>)?.maxItems?.toString() ?? "",
 			allowedMimeTypes: field.validation?.allowedMimeTypes ?? [],
+			multiple: field.validation?.multiple === true,
 		};
 	}
 	return {
@@ -121,6 +123,7 @@ function getInitialFormState(field?: SchemaField): FieldFormState {
 		minItems: "",
 		maxItems: "",
 		allowedMimeTypes: [],
+		multiple: false,
 	};
 }
 
@@ -309,6 +312,14 @@ export function FieldEditor({ open, onOpenChange, field, onSave, isSaving }: Fie
 			formState.allowedMimeTypes.length > 0
 		) {
 			validation.allowedMimeTypes = formState.allowedMimeTypes;
+		}
+
+		if ((selectedType === "file" || selectedType === "image") && formState.multiple) {
+			validation.multiple = true;
+			if (formState.minItems)
+				(validation as Record<string, unknown>).minItems = parseInt(formState.minItems, 10);
+			if (formState.maxItems)
+				(validation as Record<string, unknown>).maxItems = parseInt(formState.maxItems, 10);
 		}
 
 		// Only include searchable for text-based fields
@@ -635,10 +646,46 @@ export function FieldEditor({ open, onOpenChange, field, onSave, isSaving }: Fie
 						)}
 
 						{(selectedType === "file" || selectedType === "image") && (
-							<AllowedTypesEditor
-								value={formState.allowedMimeTypes}
-								onChange={(next) => setField("allowedMimeTypes", next)}
-							/>
+							<div className="space-y-4">
+								<Switch
+									checked={formState.multiple}
+									onCheckedChange={(checked) => setField("multiple", checked)}
+									label={
+										<span className="text-sm">
+											{selectedType === "image"
+												? t`Allow multiple images`
+												: t`Allow multiple files`}
+										</span>
+									}
+								/>
+								{field?.validation?.multiple === true && !formState.multiple && (
+									<p className="text-sm text-kumo-danger">
+										{t`Entries that already hold more than one item will fail validation until they are edited down to a single item.`}
+									</p>
+								)}
+								{formState.multiple && (
+									<div className="grid grid-cols-2 gap-4">
+										<Input
+											label={t`Min Items`}
+											type="number"
+											value={formState.minItems}
+											onChange={(e) => setField("minItems", e.target.value)}
+											placeholder="0"
+										/>
+										<Input
+											label={t`Max Items`}
+											type="number"
+											value={formState.maxItems}
+											onChange={(e) => setField("maxItems", e.target.value)}
+											placeholder={t`No limit`}
+										/>
+									</div>
+								)}
+								<AllowedTypesEditor
+									value={formState.allowedMimeTypes}
+									onChange={(next) => setField("allowedMimeTypes", next)}
+								/>
+							</div>
 						)}
 					</div>
 				)}

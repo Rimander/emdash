@@ -3406,9 +3406,16 @@ export class EmDashRuntime {
 			if (value == null) continue;
 
 			try {
-				const normalized = await normalizeMediaValue(value, getProvider);
-				if (normalized) {
-					result[field.slug] = normalized;
+				if (Array.isArray(value)) {
+					// validation.multiple fields: normalize each item, keep as-is on failure
+					result[field.slug] = await Promise.all(
+						value.map(async (item) => (await normalizeMediaValue(item, getProvider)) ?? item),
+					);
+				} else {
+					const normalized = await normalizeMediaValue(value, getProvider);
+					if (normalized) {
+						result[field.slug] = normalized;
+					}
 				}
 			} catch {
 				// Don't fail the save if normalization fails for a single field

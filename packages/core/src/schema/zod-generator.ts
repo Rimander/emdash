@@ -133,32 +133,38 @@ function getBaseSchema(type: FieldType, field: Field): ZodTypeAny {
 			);
 
 		case "image":
-			return z.object({
-				id: z.string(),
-				src: z.string().optional(),
-				alt: z.string().optional(),
-				width: z.number().optional(),
-				height: z.number().optional(),
-				/** Provider ID (e.g. "local", "cloudflare-images") */
-				provider: z.string().optional(),
-				/** Admin-side preview URL for external providers (not persisted by plugins) */
-				previewUrl: z.string().optional(),
-				/** Provider-specific metadata; for local media this carries storageKey */
-				meta: z.record(z.string(), z.unknown()).optional(),
-			});
+			return applyMediaMultiplicity(
+				z.object({
+					id: z.string(),
+					src: z.string().optional(),
+					alt: z.string().optional(),
+					width: z.number().optional(),
+					height: z.number().optional(),
+					/** Provider ID (e.g. "local", "cloudflare-images") */
+					provider: z.string().optional(),
+					/** Admin-side preview URL for external providers (not persisted by plugins) */
+					previewUrl: z.string().optional(),
+					/** Provider-specific metadata; for local media this carries storageKey */
+					meta: z.record(z.string(), z.unknown()).optional(),
+				}),
+				field,
+			);
 
 		case "file":
-			return z.object({
-				id: z.string(),
-				src: z.string().optional(),
-				filename: z.string().optional(),
-				mimeType: z.string().optional(),
-				size: z.number().optional(),
-				/** Provider ID (e.g. "local", "s3") */
-				provider: z.string().optional(),
-				/** Provider-specific metadata; for local media this carries storageKey */
-				meta: z.record(z.string(), z.unknown()).optional(),
-			});
+			return applyMediaMultiplicity(
+				z.object({
+					id: z.string(),
+					src: z.string().optional(),
+					filename: z.string().optional(),
+					mimeType: z.string().optional(),
+					size: z.number().optional(),
+					/** Provider ID (e.g. "local", "s3") */
+					provider: z.string().optional(),
+					/** Provider-specific metadata; for local media this carries storageKey */
+					meta: z.record(z.string(), z.unknown()).optional(),
+				}),
+				field,
+			);
 
 		case "reference":
 			return z.string(); // Reference ID
@@ -169,6 +175,31 @@ function getBaseSchema(type: FieldType, field: Field): ZodTypeAny {
 		default:
 			return z.unknown();
 	}
+}
+
+/**
+ * Wrap an image/file item schema in an array when `validation.multiple` is
+ * set. Values stored under the other multiplicity must round-trip through
+ * the editor after a toggle (#867), so a lone object is wrapped and a
+ * one-element array is unwrapped.
+ */
+function applyMediaMultiplicity(item: ZodTypeAny, field: Field): ZodTypeAny {
+	const validation = field.validation;
+	if (!validation?.multiple) {
+		return z.preprocess((v) => (Array.isArray(v) && v.length === 1 ? v[0] : v), item);
+	}
+
+	let arr = z.array(item);
+	if (validation.minItems !== undefined) {
+		arr = arr.min(validation.minItems);
+	}
+	if (validation.maxItems !== undefined) {
+		arr = arr.max(validation.maxItems);
+	}
+	return z.preprocess(
+		(v) => (typeof v === "object" && v !== null && !Array.isArray(v) ? [v] : v),
+		arr,
+	);
 }
 
 /**
@@ -411,11 +442,17 @@ function fieldTypeToTypeScript(field: Field): string {
 		case "portableText":
 			return "PortableTextBlock[]";
 
-		case "image":
-			return "{ id: string; src?: string; alt?: string; width?: number; height?: number; provider?: string; previewUrl?: string; meta?: Record<string, unknown> }";
+		case "image": {
+			const imageType =
+				"{ id: string; src?: string; alt?: string; width?: number; height?: number; provider?: string; previewUrl?: string; meta?: Record<string, unknown> }";
+			return field.validation?.multiple ? `Array<${imageType}>` : imageType;
+		}
 
-		case "file":
-			return "{ id: string; src?: string; filename?: string; mimeType?: string; size?: number; provider?: string; meta?: Record<string, unknown> }";
+		case "file": {
+			const fileType =
+				"{ id: string; src?: string; filename?: string; mimeType?: string; size?: number; provider?: string; meta?: Record<string, unknown> }";
+			return field.validation?.multiple ? `Array<${fileType}>` : fileType;
+		}
 
 		case "reference":
 			// Could be enhanced to include the referenced collection type

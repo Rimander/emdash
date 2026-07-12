@@ -39,6 +39,26 @@ export interface ImageFieldValue {
 	meta?: Record<string, unknown>;
 }
 
+/** Map a picked MediaItem to the stored image field value. */
+export function mediaItemToImageValue(item: MediaItem): ImageFieldValue {
+	const isLocalProvider = !item.provider || item.provider === "local";
+	return {
+		id: item.id,
+		provider: item.provider || "local",
+		// Local media derives URLs from meta.storageKey at display time — no src needed
+		// External providers cache a preview URL for admin display
+		previewUrl: isLocalProvider ? undefined : item.url,
+		alt: item.alt || "",
+		width: item.width,
+		height: item.height,
+		// Cache LQIP alongside dimensions so embeds render a placeholder without a
+		// runtime lookup. Fall back to `meta` for providers that stash it there.
+		blurhash: item.blurhash ?? metaString(item.meta, "blurhash"),
+		dominantColor: item.dominantColor ?? metaString(item.meta, "dominantColor"),
+		meta: isLocalProvider ? { ...item.meta, storageKey: item.storageKey } : item.meta,
+	};
+}
+
 export interface ImageFieldRendererProps {
 	id?: string;
 	label: string;
@@ -79,23 +99,7 @@ export function ImageFieldRenderer({
 	}, [displayUrl]);
 
 	const handleSelect = (item: MediaItem) => {
-		const isLocalProvider = !item.provider || item.provider === "local";
-
-		onChange({
-			id: item.id,
-			provider: item.provider || "local",
-			// Local media derives URLs from meta.storageKey at display time — no src needed
-			// External providers cache a preview URL for admin display
-			previewUrl: isLocalProvider ? undefined : item.url,
-			alt: item.alt || "",
-			width: item.width,
-			height: item.height,
-			// Cache LQIP alongside dimensions so embeds render a placeholder without a
-			// runtime lookup. Fall back to `meta` for providers that stash it there.
-			blurhash: item.blurhash ?? metaString(item.meta, "blurhash"),
-			dominantColor: item.dominantColor ?? metaString(item.meta, "dominantColor"),
-			meta: isLocalProvider ? { ...item.meta, storageKey: item.storageKey } : item.meta,
-		});
+		onChange(mediaItemToImageValue(item));
 	};
 
 	const handleRemove = () => {

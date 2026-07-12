@@ -37,24 +37,12 @@ export function extractMediaUsageOccurrences({
 		const value = data[field.slug];
 
 		if (field.type === "image") {
-			addOccurrence(occurrences, seen, {
-				fieldSlug: field.slug,
-				fieldPath: field.slug,
-				referenceType: "image_field",
-				value,
-				fallbackKind: "image",
-			});
+			addMediaFieldOccurrences(occurrences, seen, field.slug, value, "image_field", "image");
 			continue;
 		}
 
 		if (field.type === "file") {
-			addOccurrence(occurrences, seen, {
-				fieldSlug: field.slug,
-				fieldPath: field.slug,
-				referenceType: "file_field",
-				value,
-				fallbackKind: null,
-			});
+			addMediaFieldOccurrences(occurrences, seen, field.slug, value, "file_field", null);
 			continue;
 		}
 
@@ -69,6 +57,30 @@ export function extractMediaUsageOccurrences({
 	}
 
 	return occurrences;
+}
+
+/** Handles both single values and `validation.multiple` arrays. */
+function addMediaFieldOccurrences(
+	occurrences: ExtractedMediaUsageOccurrence[],
+	seen: Set<string>,
+	fieldSlug: string,
+	value: unknown,
+	referenceType: MediaUsageReferenceType,
+	fallbackKind: MediaKind | null,
+): void {
+	const items = Array.isArray(value)
+		? value.map((item, index) => ({ item, fieldPath: `${fieldSlug}[${index}]` }))
+		: [{ item: value, fieldPath: fieldSlug }];
+
+	for (const { item, fieldPath } of items) {
+		addOccurrence(occurrences, seen, {
+			fieldSlug,
+			fieldPath,
+			referenceType,
+			value: item,
+			fallbackKind,
+		});
+	}
 }
 
 function extractRepeaterOccurrences(

@@ -56,6 +56,55 @@ describe("extractMediaUsageOccurrences", () => {
 		]);
 	});
 
+	it("extracts every item of a multiple image/file field with indexed paths", () => {
+		const occurrences = extractMediaUsageOccurrences({
+			fields: [field("gallery", "image"), field("downloads", "file")],
+			data: {
+				gallery: [
+					{ id: "media-a", provider: "local", mimeType: "image/jpeg" },
+					{ id: "media-b", provider: "local", mimeType: "image/png" },
+				],
+				downloads: [{ id: "media-doc", provider: "local", mimeType: "application/pdf" }],
+			},
+		});
+
+		expect(occurrences).toEqual([
+			{
+				fieldSlug: "gallery",
+				fieldPath: "gallery[0]",
+				occurrenceIndex: 0,
+				referenceType: "image_field",
+				mediaId: "media-a",
+				provider: "local",
+				providerAssetId: "media-a",
+				mediaKind: "image",
+				mimeType: "image/jpeg",
+			},
+			{
+				fieldSlug: "gallery",
+				fieldPath: "gallery[1]",
+				occurrenceIndex: 0,
+				referenceType: "image_field",
+				mediaId: "media-b",
+				provider: "local",
+				providerAssetId: "media-b",
+				mediaKind: "image",
+				mimeType: "image/png",
+			},
+			{
+				fieldSlug: "downloads",
+				fieldPath: "downloads[0]",
+				occurrenceIndex: 0,
+				referenceType: "file_field",
+				mediaId: "media-doc",
+				provider: "local",
+				providerAssetId: "media-doc",
+				mediaKind: "document",
+				mimeType: "application/pdf",
+			},
+		]);
+	});
+
 	it("extracts legacy bare local IDs and skips URLs or internal file routes", () => {
 		const occurrences = extractMediaUsageOccurrences({
 			fields: [

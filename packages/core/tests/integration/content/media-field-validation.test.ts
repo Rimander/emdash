@@ -215,6 +215,58 @@ describeEachDialect("save-side media-field MIME validation", (dialect) => {
 		expect(result.error.code).toBe("INVALID_MIME_FOR_FIELD");
 	});
 
+	it("validates every item of a multiple media field against the allowlist", async () => {
+		const collection = await ctx.db
+			.selectFrom("_emdash_collections")
+			.select("id")
+			.where("slug", "=", "posts")
+			.executeTakeFirstOrThrow();
+
+		await ctx.db
+			.insertInto("_emdash_fields")
+			.values({
+				id: ulid(),
+				collection_id: collection.id,
+				slug: "documents",
+				label: "Documents",
+				type: "file",
+				column_type: "TEXT",
+				required: 0,
+				unique: 0,
+				default_value: null,
+				validation: JSON.stringify({ multiple: true, allowedMimeTypes: ["application/pdf"] }),
+				widget: "file",
+				options: null,
+				sort_order: 30,
+			})
+			.execute();
+
+		await ctx.db.schema.alterTable("ec_posts").addColumn("documents", "text").execute();
+
+		const rejected = await handleContentCreate(ctx.db, "posts", {
+			slug: "p7",
+			data: {
+				title: "p7",
+				documents: [
+					{ id: pdfMediaId, provider: "local", filename: "doc.pdf" },
+					{ id: zipMediaId, provider: "local", filename: "x.zip" },
+				],
+			},
+		});
+		expect(rejected.success).toBe(false);
+		if (rejected.success) return;
+		expect(rejected.error.code).toBe("INVALID_MIME_FOR_FIELD");
+
+		const accepted = await handleContentCreate(ctx.db, "posts", {
+			slug: "p8",
+			data: {
+				title: "p8",
+				documents: [{ id: pdfMediaId, provider: "local", filename: "doc.pdf" }],
+			},
+		});
+		expect(accepted.success).toBe(true);
+	});
+
 	it("file/image field without allowedMimeTypes is not validated", async () => {
 		// Insert a second file field with no MIME restrictions (backwards-compat assertion)
 		const collection = await ctx.db

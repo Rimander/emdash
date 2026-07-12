@@ -24,6 +24,17 @@ function asMediaRef(value: unknown): MediaRefValue | null {
 	return value;
 }
 
+/** A multiple field holds an array of refs; a single field holds one. */
+function asMediaRefList(value: unknown): MediaRefValue[] {
+	const items = Array.isArray(value) ? value : [value];
+	const refs: MediaRefValue[] = [];
+	for (const item of items) {
+		const ref = asMediaRef(item);
+		if (ref) refs.push(ref);
+	}
+	return refs;
+}
+
 function fail(message: string): ApiResult<never> {
 	return { success: false, error: { code: "INVALID_MIME_FOR_FIELD", message } };
 }
@@ -65,11 +76,11 @@ export async function validateMediaFields(
 	// Collect local media ids that need a MIME lookup
 	const localIds = new Set<string>();
 	for (const field of fields) {
-		const ref = asMediaRef(data[field.slug]);
-		if (!ref) continue;
-		const provider = typeof ref.provider === "string" ? ref.provider : "local";
-		if (provider === "local" && typeof ref.id === "string") {
-			localIds.add(ref.id);
+		for (const ref of asMediaRefList(data[field.slug])) {
+			const provider = typeof ref.provider === "string" ? ref.provider : "local";
+			if (provider === "local" && typeof ref.id === "string") {
+				localIds.add(ref.id);
+			}
 		}
 	}
 
@@ -88,36 +99,33 @@ export async function validateMediaFields(
 	}
 
 	for (const field of fields) {
-		const value = data[field.slug];
-		if (value === null || value === undefined) continue;
-		const ref = asMediaRef(value);
-		if (!ref) continue;
+		for (const ref of asMediaRefList(data[field.slug])) {
+			const provider = typeof ref.provider === "string" ? ref.provider : "local";
 
-		const provider = typeof ref.provider === "string" ? ref.provider : "local";
+			// External providers carry mimeType in the ref; trust it as-is.
+			// Local media: look up the stored mimeType by id.
+			let mime: string | undefined;
+			if (provider === "local") {
+				if (typeof ref.id !== "string") {
+					return fail(`Field '${field.slug}' references media with an invalid id`);
+				}
+				mime = mimeById.get(ref.id);
+				if (!mime) {
+					return fail(`Field '${field.slug}' references media with unknown MIME type`);
+				}
+			} else {
+				if (typeof ref.mimeType !== "string") {
+					return fail(`Field '${field.slug}' requires a mimeType declaration for non-local media`);
+				}
+				// TODO: long-term, consider a server-side HEAD probe or provider-vouched
+				// MIMEs for non-local refs; for now the constraint is only as strong as
+				// the client that constructed the ref.
+				mime = ref.mimeType;
+			}
 
-		// External providers carry mimeType in the ref; trust it as-is.
-		// Local media: look up the stored mimeType by id.
-		let mime: string | undefined;
-		if (provider === "local") {
-			if (typeof ref.id !== "string") {
-				return fail(`Field '${field.slug}' references media with an invalid id`);
+			if (!matchesMimeAllowlist(mime, field.allowedMimeTypes)) {
+				return fail(`Field '${field.slug}' does not accept ${mime}`);
 			}
-			mime = mimeById.get(ref.id);
-			if (!mime) {
-				return fail(`Field '${field.slug}' references media with unknown MIME type`);
-			}
-		} else {
-			if (typeof ref.mimeType !== "string") {
-				return fail(`Field '${field.slug}' requires a mimeType declaration for non-local media`);
-			}
-			// TODO: long-term, consider a server-side HEAD probe or provider-vouched
-			// MIMEs for non-local refs; for now the constraint is only as strong as
-			// the client that constructed the ref.
-			mime = ref.mimeType;
-		}
-
-		if (!matchesMimeAllowlist(mime, field.allowedMimeTypes)) {
-			return fail(`Field '${field.slug}' does not accept ${mime}`);
 		}
 	}
 

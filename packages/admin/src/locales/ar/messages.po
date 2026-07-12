@@ -80,7 +80,7 @@ msgstr "(مع منفذ التطوير الخاص بك)."
 #: packages/admin/src/components/ContentTypeList.tsx:69
 #: packages/admin/src/components/RepeaterField.tsx:152
 msgid "{0, plural, one {(# item)} other {(# items)}}"
-msgstr "{0, plural, few {(# عناصر)} many {(# عنصرًا)}} other {(# عنصر)}}"
+msgstr "{0, plural, few {(# عناصر)} many {(# عنصرًا)} other {(# عنصر)}}"
 
 #. placeholder {0}: seedInfo.collections
 #: packages/admin/src/components/SetupWizard.tsx:156
